@@ -28,6 +28,7 @@
 
   function setStatus(s) {
     statusEl.textContent = s;
+    statusEl.className = s.startsWith('Error') ? 'err' : (s.indexOf('Configured') === 0 ? 'ok' : '');
   }
 
   function isInteractiveOAuth(optionValue, optionLabel) {
@@ -43,8 +44,7 @@
     var advancedToggle = document.getElementById('showAdvancedAuth');
     if (!advancedToggle) {
       advancedToggle = document.createElement('label');
-      advancedToggle.style.display = 'block';
-      advancedToggle.style.marginTop = '0.5rem';
+      advancedToggle.className = 'adv-toggle';
       advancedToggle.innerHTML = '<input type="checkbox" id="showAdvancedAuth" /> Show interactive OAuth options (advanced)';
       // Insert before authChoiceEl (not its parentNode) to avoid DOM error
       authGroupEl.parentNode.insertBefore(advancedToggle, authChoiceEl);
@@ -335,8 +335,7 @@
           row.style.marginTop = '0.25rem';
           var btn = document.createElement('button');
           btn.textContent = 'Approve ' + id;
-          btn.style.background = '#111';
-          btn.style.marginRight = '0.5rem';
+          btn.className = 'btn-approve';
           btn.onclick = function () { approveDevice(id); };
           var code = document.createElement('code');
           code.textContent = id;

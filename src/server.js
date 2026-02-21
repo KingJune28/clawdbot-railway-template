@@ -363,52 +363,154 @@ app.get("/setup/app.js", requireSetupAuth, (_req, res) => {
 app.get("/setup", requireSetupAuth, (_req, res) => {
   // No inline <script>: serve JS from /setup/app.js to avoid any encoding/template-literal issues.
   res.type("html").send(`<!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>OpenClaw Setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=Fira+Mono&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin: 2rem; max-width: 900px; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 1.25rem; margin: 1rem 0; }
-    label { display:block; margin-top: 0.75rem; font-weight: 600; }
-    input, select { width: 100%; padding: 0.6rem; margin-top: 0.25rem; }
-    button { padding: 0.8rem 1.2rem; border-radius: 10px; border: 0; background: #111; color: #fff; font-weight: 700; cursor: pointer; }
-    code { background: #f6f6f6; padding: 0.1rem 0.3rem; border-radius: 6px; }
-    .muted { color: #555; }
+    :root {
+      --bg: #07080f;
+      --surface: #0d0f1a;
+      --card: #111422;
+      --border: rgba(249,115,22,0.14);
+      --border-h: rgba(249,115,22,0.30);
+      --accent: #f97316;
+      --accent-dim: rgba(249,115,22,0.08);
+      --cyan: #22d3ee;
+      --green: #34d399;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --mono: 'Fira Mono','Menlo','Consolas',monospace;
+      --sans: 'DM Sans',system-ui,sans-serif;
+      --display: 'Rajdhani',system-ui,sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.6; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(249,115,22,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(249,115,22,0.04) 1px, transparent 1px); background-size: 44px 44px; pointer-events: none; z-index: 0; }
+    .page { position: relative; z-index: 1; max-width: 940px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+    /* HEADER */
+    .hdr { display: flex; align-items: center; gap: 1rem; margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+    .hdr-logo { width: 46px; height: 46px; background: linear-gradient(135deg,#f97316,#ea580c); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 24px rgba(249,115,22,0.35); }
+    .hdr h1 { font-family: var(--display); font-size: 1.9rem; font-weight: 700; letter-spacing: 0.08em; line-height: 1.1; background: linear-gradient(90deg,#fff 55%,var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hdr p { color: var(--muted); font-size: 0.8rem; margin-top: 0.15rem; }
+    /* CARD */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.25rem; transition: border-color 0.2s; }
+    .card:hover { border-color: var(--border-h); }
+    .card-hdr { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; }
+    .badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: var(--accent-dim); border: 1px solid rgba(249,115,22,0.35); border-radius: 6px; font-family: var(--display); font-size: 0.7rem; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+    .card h2 { font-family: var(--display); font-size: 1rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+    .tag { margin-left: auto; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 4px; padding: 0.1rem 0.4rem; }
+    .card > p { color: var(--muted); font-size: 0.8rem; margin-bottom: 0.5rem; }
+    /* STATUS */
+    #status { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--mono); font-size: 0.78rem; padding: 0.35rem 0.8rem; background: var(--surface); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; }
+    #status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--yellow); animation: pulse 2s infinite; flex-shrink: 0; }
+    #status.ok::before { background: var(--green); animation: none; box-shadow: 0 0 6px var(--green); }
+    #status.err::before { background: var(--red); animation: none; }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+    #statusDetails { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); margin-top: 0.5rem; white-space: pre-wrap; }
+    .status-links { display: flex; gap: 1.25rem; margin-top: 0.875rem; flex-wrap: wrap; }
+    .status-links a { color: var(--cyan); text-decoration: none; font-size: 0.78rem; display: inline-flex; align-items: center; transition: opacity 0.15s; }
+    .status-links a:hover { opacity: 0.7; }
+    .import-zone { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); }
+    .section-label { font-size: 0.72rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 0.4rem; }
+    /* FORMS */
+    label { display: block; font-size: 0.7rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-top: 1rem; margin-bottom: 0.3rem; }
+    input, select, textarea { width: 100%; background: var(--surface); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; color: var(--text); font-family: var(--sans); font-size: 0.875rem; padding: 0.6rem 0.8rem; outline: none; transition: border-color 0.15s,box-shadow 0.15s; -webkit-appearance: none; appearance: none; }
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%2364748b' d='M5 7L1 3h8z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.8rem center; padding-right: 2.2rem; cursor: pointer; }
+    textarea { font-family: var(--mono); font-size: 0.78rem; height: 220px; resize: vertical; line-height: 1.55; }
+    input:focus, select:focus, textarea:focus { border-color: rgba(249,115,22,0.45); box-shadow: 0 0 0 3px rgba(249,115,22,0.07); }
+    input::placeholder { color: rgba(100,116,139,0.55); }
+    input[type="file"] { padding: 0.4rem 0.6rem; font-size: 0.78rem; color: var(--muted); cursor: pointer; }
+    input[type="file"]::file-selector-button { background: var(--surface); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: var(--text); padding: 0.25rem 0.65rem; font-size: 0.75rem; cursor: pointer; margin-right: 0.5rem; font-family: var(--sans); }
+    /* BUTTONS */
+    button { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.55rem 1.1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-family: var(--display); font-size: 0.82rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; background: transparent; color: var(--text); transition: background 0.15s,border-color 0.15s,box-shadow 0.15s; white-space: nowrap; }
+    button:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.18); }
+    button:active { transform: scale(0.97); }
+    #run { background: var(--accent); color: #000; border-color: transparent; box-shadow: 0 0 14px rgba(249,115,22,0.28); }
+    #run:hover { background: #fb923c; box-shadow: 0 0 22px rgba(249,115,22,0.45); }
+    #importRun { border-color: rgba(248,113,113,0.25); color: var(--red); }
+    #importRun:hover { background: rgba(248,113,113,0.06); border-color: rgba(248,113,113,0.45); }
+    .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+    /* PRE / CODE */
+    pre { font-family: var(--mono); font-size: 0.72rem; background: #08090e; border: 1px solid rgba(255,255,255,0.05); border-left: 3px solid rgba(249,115,22,0.25); border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; white-space: pre-wrap; word-break: break-word; color: var(--green); margin-top: 0.75rem; line-height: 1.55; }
+    pre:empty { display: none; }
+    code { font-family: var(--mono); font-size: 0.8em; background: rgba(255,255,255,0.06); padding: 0.1em 0.35em; border-radius: 4px; color: var(--cyan); }
+    /* CONSOLE */
+    .console-row { display: flex; gap: 0.5rem; align-items: center; }
+    .console-row select { flex: 1.8; }
+    .console-row input { flex: 1; }
+    /* GRID */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.25rem; }
+    /* DETAILS */
+    details { border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem 1rem; }
+    summary { cursor: pointer; font-size: 0.82rem; font-weight: 500; list-style: none; display: flex; align-items: center; gap: 0.4rem; user-select: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: '\\25B6'; font-size: 0.55rem; color: var(--accent); transition: transform 0.15s; }
+    details[open] summary::before { transform: rotate(90deg); }
+    details > *:not(summary) { margin-top: 0.75rem; }
+    /* DYNAMIC ELEMENTS (created by app.js) */
+    .adv-toggle { display: flex !important; align-items: center; gap: 0.4rem; margin-top: 0.75rem; font-size: 0.78rem; color: var(--muted); cursor: pointer; }
+    .adv-toggle input[type="checkbox"] { width: auto; accent-color: var(--accent); cursor: pointer; }
+    .btn-approve { background: transparent; border: 1px solid rgba(34,211,238,0.25); color: var(--cyan); font-size: 0.75rem; padding: 0.25rem 0.65rem; margin-right: 0.5rem; }
+    .btn-approve:hover { background: rgba(34,211,238,0.06); border-color: rgba(34,211,238,0.45); }
+    .muted { color: var(--muted); font-size: 0.78rem; }
+    @media (max-width:600px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .console-row { flex-direction: column; align-items: stretch; }
+      .hdr h1 { font-size: 1.5rem; }
+    }
   </style>
 </head>
 <body>
-  <h1>OpenClaw Setup</h1>
-  <p class="muted">This wizard configures OpenClaw by running the same onboarding command it uses in the terminal, but from the browser.</p>
+<div class="page">
+
+  <header class="hdr">
+    <div class="hdr-logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 3 C7.5 7 9 11 8 15 C7.5 17 6 18.5 7.5 20"/>
+        <path d="M12 2 C12 6 12 10 12 14 C12 16.5 11.5 18 12 20"/>
+        <path d="M15 3 C16.5 7 15 11 16 15 C16.5 17 18 18.5 16.5 20"/>
+        <line x1="7" y1="20" x2="17" y2="20"/>
+      </svg>
+    </div>
+    <div>
+      <h1>OPENCLAW SETUP</h1>
+      <p>Configure your hosted OpenClaw instance — no terminal required.</p>
+    </div>
+  </header>
 
   <div class="card">
-    <h2>Status</h2>
-    <div id="status">Loading...</div>
-    <div id="statusDetails" class="muted" style="margin-top:0.5rem"></div>
-    <div style="margin-top: 0.75rem">
-      <a href="/openclaw" target="_blank">Open OpenClaw UI</a>
-      &nbsp;|&nbsp;
-      <a href="/setup/export" target="_blank">Download backup (.tar.gz)</a>
+    <div class="card-hdr"><h2>Status</h2></div>
+    <div id="status">Loading…</div>
+    <div id="statusDetails"></div>
+    <div class="status-links">
+      <a href="/openclaw" target="_blank">&#x2197; Open OpenClaw UI</a>
+      <a href="/setup/export" target="_blank">&#x2193; Download backup</a>
     </div>
-
-    <div style="margin-top: 0.75rem">
-      <div class="muted" style="margin-bottom:0.25rem"><strong>Import backup</strong> (advanced): restores into <code>/data</code> and restarts the gateway.</div>
+    <div class="import-zone">
+      <div class="section-label">Import backup (advanced)</div>
+      <p class="muted" style="margin-bottom:0.5rem">Restores into <code>/data</code> and restarts the gateway.</p>
       <input id="importFile" type="file" accept=".tar.gz,application/gzip" />
-      <button id="importRun" style="background:#7c2d12; margin-top:0.5rem">Import</button>
-      <pre id="importOut" style="white-space:pre-wrap"></pre>
+      <button id="importRun" style="margin-top:0.5rem">Import</button>
+      <pre id="importOut"></pre>
     </div>
   </div>
 
   <div class="card">
-    <h2>Debug console</h2>
-    <p class="muted">Run a small allowlist of safe commands (no shell). Useful for debugging and recovery.</p>
-
-    <div style="display:flex; gap:0.5rem; align-items:center">
-      <select id="consoleCmd" style="flex: 1">
-        <option value="gateway.restart">gateway.restart (wrapper-managed)</option>
-        <option value="gateway.stop">gateway.stop (wrapper-managed)</option>
-        <option value="gateway.start">gateway.start (wrapper-managed)</option>
+    <div class="card-hdr"><h2>Debug Console</h2></div>
+    <p>Run allowlisted safe commands — no shell access.</p>
+    <div class="console-row">
+      <select id="consoleCmd">
+        <option value="gateway.restart">gateway.restart</option>
+        <option value="gateway.stop">gateway.stop</option>
+        <option value="gateway.start">gateway.start</option>
         <option value="openclaw.status">openclaw status</option>
         <option value="openclaw.health">openclaw health</option>
         <option value="openclaw.doctor">openclaw doctor</option>
@@ -420,40 +522,39 @@ app.get("/setup", requireSetupAuth, (_req, res) => {
         <option value="openclaw.plugins.list">openclaw plugins list</option>
         <option value="openclaw.plugins.enable">openclaw plugins enable &lt;name&gt;</option>
       </select>
-      <input id="consoleArg" placeholder="Optional arg (e.g. 200, gateway.port)" style="flex: 1" />
-      <button id="consoleRun" style="background:#0f172a">Run</button>
+      <input id="consoleArg" placeholder="Optional arg (e.g. 200)" />
+      <button id="consoleRun">Run</button>
     </div>
-    <pre id="consoleOut" style="white-space:pre-wrap"></pre>
+    <pre id="consoleOut"></pre>
   </div>
 
   <div class="card">
-    <h2>Config editor (advanced)</h2>
-    <p class="muted">Edits the full config file on disk (JSON5). Saving creates a timestamped <code>.bak-*</code> backup and restarts the gateway.</p>
-    <div class="muted" id="configPath"></div>
-    <textarea id="configText" style="width:100%; height: 260px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;"></textarea>
-    <div style="margin-top:0.5rem">
-      <button id="configReload" style="background:#1f2937">Reload</button>
-      <button id="configSave" style="background:#111; margin-left:0.5rem">Save</button>
+    <div class="card-hdr">
+      <h2>Config Editor</h2>
+      <span class="tag">advanced</span>
     </div>
-    <pre id="configOut" style="white-space:pre-wrap"></pre>
+    <p>Edit the full config file (JSON5). Saving creates a <code>.bak-*</code> backup and restarts the gateway.</p>
+    <div id="configPath" class="muted" style="font-family:'Fira Mono',monospace;font-size:0.72rem;margin-bottom:0.5rem"></div>
+    <textarea id="configText"></textarea>
+    <div class="btn-row">
+      <button id="configReload">Reload</button>
+      <button id="configSave">Save &amp; Restart</button>
+    </div>
+    <pre id="configOut"></pre>
   </div>
 
   <div class="card">
-    <h2>1) Model/auth provider</h2>
-    <p class="muted">Matches the groups shown in the terminal onboarding.</p>
+    <div class="card-hdr">
+      <span class="badge">1</span>
+      <h2>Model / Auth Provider</h2>
+    </div>
+    <p>Matches the provider groups from terminal onboarding.</p>
     <label>Provider group</label>
-    <select id="authGroup">
-      <option>Loading providers…</option>
-    </select>
-
+    <select id="authGroup"><option>Loading providers…</option></select>
     <label>Auth method</label>
-    <select id="authChoice">
-      <option>Loading methods…</option>
-    </select>
-
+    <select id="authChoice"><option>Loading methods…</option></select>
     <label>Key / Token (if required)</label>
-    <input id="authSecret" type="password" placeholder="Paste API key / token if applicable" />
-
+    <input id="authSecret" type="password" placeholder="Paste API key or token" />
     <label>Wizard flow</label>
     <select id="flow">
       <option value="quickstart">quickstart</option>
@@ -463,69 +564,89 @@ app.get("/setup", requireSetupAuth, (_req, res) => {
   </div>
 
   <div class="card">
-    <h2>2) Optional: Channels</h2>
-    <p class="muted">You can also add channels later inside OpenClaw, but this helps you get messaging working immediately.</p>
-
-    <label>Telegram bot token (optional)</label>
-    <input id="telegramToken" type="password" placeholder="123456:ABC..." />
-    <div class="muted" style="margin-top: 0.25rem">
-      Get it from BotFather: open Telegram, message <code>@BotFather</code>, run <code>/newbot</code>, then copy the token.
+    <div class="card-hdr">
+      <span class="badge">2</span>
+      <h2>Channels (optional)</h2>
     </div>
-
-    <label>Discord bot token (optional)</label>
-    <input id="discordToken" type="password" placeholder="Bot token" />
-    <div class="muted" style="margin-top: 0.25rem">
-      Get it from the Discord Developer Portal: create an application, add a Bot, then copy the Bot Token.<br/>
-      <strong>Important:</strong> Enable <strong>MESSAGE CONTENT INTENT</strong> in Bot → Privileged Gateway Intents, or the bot will crash on startup.
+    <p>Connect messaging channels now or add them later inside OpenClaw.</p>
+    <div class="grid-2">
+      <div>
+        <label>Telegram bot token</label>
+        <input id="telegramToken" type="password" placeholder="123456:ABC..." />
+        <div class="muted" style="margin-top:0.35rem">From <code>@BotFather</code> &#x2192; <code>/newbot</code></div>
+      </div>
+      <div>
+        <label>Discord bot token</label>
+        <input id="discordToken" type="password" placeholder="Bot token" />
+        <div class="muted" style="margin-top:0.35rem">Enable <strong>MESSAGE CONTENT INTENT</strong> in Bot settings.</div>
+      </div>
+      <div>
+        <label>Slack bot token</label>
+        <input id="slackBotToken" type="password" placeholder="xoxb-..." />
+      </div>
+      <div>
+        <label>Slack app token</label>
+        <input id="slackAppToken" type="password" placeholder="xapp-..." />
+      </div>
     </div>
-
-    <label>Slack bot token (optional)</label>
-    <input id="slackBotToken" type="password" placeholder="xoxb-..." />
-
-    <label>Slack app token (optional)</label>
-    <input id="slackAppToken" type="password" placeholder="xapp-..." />
   </div>
 
   <div class="card">
-    <h2>2b) Advanced: Custom OpenAI-compatible provider (optional)</h2>
-    <p class="muted">Use this to configure an OpenAI-compatible API that requires a custom base URL (e.g. Ollama, vLLM, LM Studio, hosted proxies). You usually set the API key as a Railway variable and reference it here.</p>
-
-    <label>Provider id (e.g. ollama, deepseek, myproxy)</label>
-    <input id="customProviderId" placeholder="ollama" />
-
-    <label>Base URL (must include /v1, e.g. http://host:11434/v1)</label>
+    <div class="card-hdr">
+      <span class="badge">2b</span>
+      <h2>Custom OpenAI-Compatible Provider</h2>
+      <span class="tag">optional</span>
+    </div>
+    <p>Use Ollama, vLLM, LM Studio, or any OpenAI-compatible proxy. Set the API key as a Railway variable and reference it here.</p>
+    <div class="grid-2">
+      <div>
+        <label>Provider ID</label>
+        <input id="customProviderId" placeholder="ollama" />
+      </div>
+      <div>
+        <label>API type</label>
+        <select id="customProviderApi">
+          <option value="openai-completions">openai-completions</option>
+          <option value="openai-responses">openai-responses</option>
+        </select>
+      </div>
+    </div>
+    <label>Base URL (must include /v1)</label>
     <input id="customProviderBaseUrl" placeholder="http://127.0.0.1:11434/v1" />
-
-    <label>API (openai-completions or openai-responses)</label>
-    <select id="customProviderApi">
-      <option value="openai-completions">openai-completions</option>
-      <option value="openai-responses">openai-responses</option>
-    </select>
-
-    <label>API key env var name (optional, e.g. OLLAMA_API_KEY). Leave blank for no key.</label>
-    <input id="customProviderApiKeyEnv" placeholder="OLLAMA_API_KEY" />
-
-    <label>Optional model id to register (e.g. llama3.1:8b)</label>
-    <input id="customProviderModelId" placeholder="" />
+    <div class="grid-2">
+      <div>
+        <label>API key env var (optional)</label>
+        <input id="customProviderApiKeyEnv" placeholder="OLLAMA_API_KEY" />
+      </div>
+      <div>
+        <label>Model ID (optional)</label>
+        <input id="customProviderModelId" placeholder="llama3.1:8b" />
+      </div>
+    </div>
   </div>
 
   <div class="card">
-    <h2>3) Run onboarding</h2>
-    <button id="run">Run setup</button>
-    <button id="pairingApprove" style="background:#1f2937; margin-left:0.5rem">Approve pairing</button>
-    <button id="reset" style="background:#444; margin-left:0.5rem">Reset setup</button>
-    <pre id="log" style="white-space:pre-wrap"></pre>
-    <p class="muted">Reset deletes the OpenClaw config file so you can rerun onboarding. Pairing approval lets you grant DM access when dmPolicy=pairing.</p>
-
-    <details style="margin-top: 0.75rem">
-      <summary><strong>Pairing helper</strong> (for “disconnected (1008): pairing required”)</summary>
-      <p class="muted">This lists pending device requests and lets you approve them without SSH.</p>
-      <button id="devicesRefresh" style="background:#0f172a">Refresh pending devices</button>
-      <div id="devicesList" class="muted" style="margin-top:0.5rem"></div>
+    <div class="card-hdr">
+      <span class="badge">3</span>
+      <h2>Run Onboarding</h2>
+    </div>
+    <p>Run setup to configure OpenClaw. Reset deletes the config to rerun onboarding. Pairing approval grants DM access when <code>dmPolicy=pairing</code>.</p>
+    <div class="btn-row">
+      <button id="run">Run setup</button>
+      <button id="pairingApprove">Approve pairing</button>
+      <button id="reset">Reset setup</button>
+    </div>
+    <pre id="log"></pre>
+    <details style="margin-top:1rem">
+      <summary>Pairing helper &#x2014; for &#x201C;disconnected (1008): pairing required&#x201D;</summary>
+      <p class="muted">Lists pending device requests. Approve without SSH access.</p>
+      <button id="devicesRefresh" style="margin-top:0.5rem">Refresh devices</button>
+      <div id="devicesList" class="muted" style="margin-top:0.75rem"></div>
     </details>
   </div>
 
-  <script src="/setup/app.js"></script>
+</div>
+<script src="/setup/app.js"></script>
 </body>
 </html>`);
 });
